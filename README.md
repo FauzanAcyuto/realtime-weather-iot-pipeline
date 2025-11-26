@@ -266,7 +266,7 @@ Improvement: ~6% faster, more consistent performance
 2.8s delay = ~21.43 calls/minute
 = ~1,286 calls/hour
 = ~30,857 calls/day
-= ~956,571 calls/month ✅ (within 1,000,000 limit with buffer)
+= ~956,571 calls/month (within 1,000,000 limit with buffer)
 
 ---
 
@@ -275,8 +275,8 @@ Improvement: ~6% faster, more consistent performance
 **Current Configuration:**
 - **Coverage Area:** ~100 km² grid in Borneo
 - **Collection Points:** 64 locations (8×8 grid)
-- **Sampling Rate:** 1.5 seconds per point
-- **Cycle Time:** ~179 seconds per complete area scan
+- **Sampling Rate:** 2.8 seconds per point
+- **Cycle Time:** ~179 seconds per complete area scan (3 minutes per point is adequate for the use case)
 - **Daily Volume:** 
   - Records: ~30,800 documents/day
   - Storage: ~5-7 MB/day (JSON documents with metadata)
@@ -284,6 +284,7 @@ Improvement: ~6% faster, more consistent performance
 
 **Scaling Considerations:**
 - Increase to 16×16 grid (256 points) for higher resolution (requires paid API tier)
+- Increase api call frequency for more granularity
 
 ---
 
@@ -515,7 +516,7 @@ sudo journalctl -u weather-ingestion -f
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Language:** Python 3.11+
 - **Database:** MongoDB 7.0+
@@ -633,7 +634,7 @@ Open an issue or submit a PR if you have ideas!
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built as part of Australian data engineering career transition preparation
 - Designed to demonstrate production-ready data pipeline patterns
@@ -641,7 +642,7 @@ Open an issue or submit a PR if you have ideas!
 
 ---
 
-**⭐ If this project helped you, please give it a star!**
+** If this project helped you, please give it a star!**
 
 ---
 
@@ -682,3 +683,4 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+```
