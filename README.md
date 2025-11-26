@@ -8,7 +8,7 @@ A production-grade Python application that continuously collects weather data fr
 
 ## Project Overview
 
-**Business Context:** Mining operations in Borneo is heavily obstructed by rains, and the slightest drizzle can cause a 'slippery' status to be raised which stops all production activities. Havig an accurate history of rainfall and the potential for machine learning predictions to be made would be indispensable for mine planning.
+**Business Context:** Mining operations in Borneo are heavily obstructed by rainfall, the slightest drizzle can cause a 'slippery' status to be raised which stops all production activities. Having an accurate history of rainfall and the potential for machine learning predictions to be made would be indispensable for mine planning.
 
 **Key Features:**
 - Grid-based geographical sampling (configurable density)
