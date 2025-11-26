@@ -17,8 +17,6 @@ with open("creds/creds.json", "r") as file:
 BASEURL = "https://api.openweathermap.org/data/2.5/weather"
 
 # Coordinates for data gathering
-lat = 2.133485
-lon = 117.596245
 COORDINATES = [
     (2.187184, 117.639600),
     (2.066438, 117.639600),
