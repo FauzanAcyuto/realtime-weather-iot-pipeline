@@ -6,9 +6,9 @@ A production-grade Python application that continuously collects weather data fr
 [![MongoDB](https://img.shields.io/badge/mongodb-7.0+-green.svg)](https://www.mongodb.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 🎯 Project Overview
+## Project Overview
 
-**Business Context:** Mining and agriculture operations in remote Australian regions require real-time weather monitoring for operational safety and efficiency. This system demonstrates scalable data ingestion patterns for environmental sensor networks in network-constrained environments.
+**Business Context:** Mining operations in Borneo is heavily obstructed by rains, and the slightest drizzle can cause a 'slippery' status to be raised which stops all production activities. Havig an accurate history of rainfall and the potential for machine learning predictions to be made would be indispensable for mine planning.
 
 **Key Features:**
 - Grid-based geographical sampling (configurable density)
@@ -19,13 +19,13 @@ A production-grade Python application that continuously collects weather data fr
 - Health check monitoring
 - Graceful error handling and recovery
 
-## 📊 Use Cases
+## Use Cases
 
 **Mining Operations:**
+- Production forecasting (weather-adjusted targets)
 - Heat stress monitoring (safety alerts when temperature >35°C)
 - Dust suppression planning (humidity + wind speed analysis)
 - Equipment efficiency optimization (temperature impact on machinery)
-- Production forecasting (weather-adjusted targets)
 
 **Agriculture:**
 - Irrigation scheduling (evapotranspiration calculations)
@@ -33,7 +33,7 @@ A production-grade Python application that continuously collects weather data fr
 - Spray window identification (wind speed + precipitation forecast)
 - Disease risk assessment (humidity + temperature patterns)
 
-## 🏗️ Architecture
+## Architecture
 ```
 OpenWeatherMap API (Grid Sampling)
          ↓
@@ -58,7 +58,7 @@ OpenWeatherMap API (Grid Sampling)
 5. **Health Check:** Ping monitoring service every 25 records
 6. **Continuous Loop:** Repeat indefinitely with error recovery
 
-## 🎓 Design Decisions
+## Design Decisions
 
 ### 1. Grid-Based Geographical Sampling
 
@@ -78,7 +78,7 @@ OpenWeatherMap API (Grid Sampling)
 
 **Example Coverage:**
 
-![Grid Sampling Visualization](docs/grid-sampling-map.png)
+![Grid Sampling Visualization](docs/data-point-coverage-mining.png)
 
 *64 sampling points covering ~100 km² area in Borneo. Each point represents a simulated IoT weather station.*
 
@@ -98,11 +98,11 @@ def get_grid_coordinates(corners, grid=8):
 ```
 
 **Trade-offs:**
-- ✅ Comprehensive area coverage
-- ✅ Realistic IoT simulation
-- ✅ Demonstrates batch processing patterns
-- ⚠️ Higher API call volume (manage with rate limiting)
-- ⚠️ More data storage required
+- Comprehensive area coverage
+- Realistic IoT simulation
+- Demonstrates batch processing patterns
+- More points means more time between updates for each (if conforming to free tier limit)
+- Wider area reduces granularity
 
 ---
 
@@ -160,11 +160,11 @@ def insert_data_to_mongodb(client, database, collection, data, max_retries=5):
 - Industry best practice (AWS, Google Cloud use this pattern)
 
 **Trade-offs:**
-- ✅ Handles transient failures gracefully
-- ✅ Reduces data loss during connection issues
-- ✅ Prevents overwhelming recovering servers
-- ⚠️ Can delay data ingestion during prolonged outages
-- ⚠️ Maximum 55s delay before failure (acceptable for this use case)
+- Handles transient failures gracefully
+- Reduces data loss during connection issues
+- Prevents overwhelming recovering servers
+- Can delay data ingestion during prolonged outages
+- Maximum 55s delay before failure (acceptable for this use case)
 
 ---
 
@@ -243,61 +243,51 @@ Improvement: ~6% faster, more consistent performance
 ```
 
 **Trade-offs:**
-- ✅ Significantly better performance (6% reduction in cycle time)
-- ✅ More resilient to transient failures
-- ✅ Production-ready configuration
-- ⚠️ Slightly higher memory usage (negligible: ~5MB per connection)
-- ⚠️ More complex configuration (documented here)
+- Significantly better performance (6% reduction in cycle time)
+- More resilient to transient failures
+-  Production-ready configuration
+-  Slightly higher memory usage (negligible: ~5MB per connection)
+-  More complex configuration (documented here)
 
 ---
 
 ### 4. Rate Limiting Strategy
 
-**Decision:** 1.5 second delay between API calls (not a design you asked about, but worth documenting).
+**Decision:** 2.8s second delay between API calls 
 
 **Rationale:**
 - OpenWeatherMap free tier: 60 calls/minute = 1 call/second limit
-- 1.5s delay = 40 calls/minute = comfortable margin
+- BUT it has 1,000,000 calls/month call limit
+- 2.8s delay = 956,571 calls/month = comfortable margin
 - Prevents API throttling and account suspension
 - Allows for occasional retry calls without hitting limits
 
 **Calculation:**
-```
-64 grid points × 1.5s delay = 96 seconds per full cycle
-= ~37 cycles per hour
-= ~900 cycles per day
-= ~57,600 API calls per day
-
-Free tier limit: 1,000 calls/day ❌ (would exceed!)
-
-Solution: Reduce grid size or increase delay
-Recommended: 4×4 grid (16 points) at 3.75s delay
-= 16 points × 3.75s = 60s per cycle
-= 60 cycles/hour = 1,440 cycles/day
-= ~23,000 API calls/day ✅ (within limit with buffer)
-```
+2.8s delay = ~21.43 calls/minute
+= ~1,286 calls/hour
+= ~30,857 calls/day
+= ~956,571 calls/month ✅ (within 1,000,000 limit with buffer)
 
 ---
 
-## 📈 Data Collection Statistics
+## Data Collection Statistics
 
 **Current Configuration:**
 - **Coverage Area:** ~100 km² grid in Borneo
 - **Collection Points:** 64 locations (8×8 grid)
 - **Sampling Rate:** 1.5 seconds per point
-- **Cycle Time:** ~96 seconds per complete area scan
+- **Cycle Time:** ~179 seconds per complete area scan
 - **Daily Volume:** 
-  - Records: ~37,000 documents/day
-  - Storage: ~6-8 MB/day (JSON documents with metadata)
-  - API Calls: ~37,000/day (exceeds free tier - see configuration notes)
+  - Records: ~30,800 documents/day
+  - Storage: ~5-7 MB/day (JSON documents with metadata)
+  - API Calls: ~30,800/day 
 
 **Scaling Considerations:**
-- Reduce to 4×4 grid (16 points) for free tier compliance
 - Increase to 16×16 grid (256 points) for higher resolution (requires paid API tier)
 
 ---
 
-## 🚀 Setup Instructions
+##  Setup Instructions
 
 ### Prerequisites
 - Python 3.11+
@@ -399,17 +389,7 @@ weather_area = get_grid_coordinates(COORDINATES, grid=8)
 Change `grid=8` to:
 - `grid=4` → 16 points (light coverage, free tier friendly)
 - `grid=8` → 64 points (moderate coverage, default)
-- `grid=16` → 256 points (dense coverage, requires paid API tier)
-
-**API Rate Limit Calculator:**
-```
-Points = grid × grid
-Cycle time = points × 1.5 seconds
-Daily API calls = (86400 / cycle_time) × points
-
-Free tier limit: 1,000 calls/day
-Recommended: 4×4 grid = 16 points = ~920 calls/day ✅
-```
+- `grid=16` → 256 points (dense coverage)
 
 7. **Run the script:**
 ```bash
@@ -429,7 +409,7 @@ python main.py
 
 ---
 
-## 🔧 Deployment (Production)
+##  Deployment (Production)
 
 ### Linux systemd Service
 
@@ -474,7 +454,7 @@ sudo journalctl -u weather-ingestion -f
 
 ---
 
-## 📊 Data Model
+##  Data Model
 
 **MongoDB Collection:** `weather-tracking-system.open-weather-raw`
 
@@ -548,7 +528,7 @@ sudo journalctl -u weather-ingestion -f
 
 ---
 
-## 🎓 Learning Outcomes
+## Learning Outcomes
 
 This project demonstrates:
 
@@ -585,9 +565,9 @@ This project demonstrates:
 
 ---
 
-## 🔜 Next Steps
+## Next Steps
 
-### Phase 2: Data Analysis (In Progress)
+### Phase 2: Data Analysis 
 - [ ] Jupyter notebook with pandas exploration
 - [ ] Calculate derived metrics (heat stress indices, ET rates)
 - [ ] Time series analysis and visualizations
@@ -612,7 +592,7 @@ This project demonstrates:
 
 ---
 
-## 📚 Resources & References
+##  Resources & References
 
 **Documentation:**
 - [OpenWeatherMap API Docs](https://openweathermap.org/current)
@@ -630,7 +610,7 @@ This project demonstrates:
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 This is a portfolio project demonstrating production data engineering practices. Feedback and suggestions are welcome!
 
@@ -644,19 +624,12 @@ Open an issue or submit a PR if you have ideas!
 
 ---
 
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
 ## 👤 Author
 
 **[Your Name]**
-- Portfolio: [your-portfolio-site.com]
-- LinkedIn: [linkedin.com/in/yourprofile]
-- GitHub: [github.com/yourusername]
-- Email: [your@email.com]
+- Portfolio: -
+- LinkedIn: [linkedin.com/in/fauzan-acyuto]
+- Email: [acyuto.professional@gmail.com]
 
 ---
 

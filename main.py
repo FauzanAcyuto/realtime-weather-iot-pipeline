@@ -14,7 +14,11 @@ with open("creds/creds.json", "r") as file:
     APIKEY = creds["openweatherapikey"]
     MONGODB_URI = creds["mongodb-uri"]
     HEALTHCHECK_URL = creds["healthcheck-url"]
+
+# Api configuration
 BASEURL = "https://api.openweathermap.org/data/2.5/weather"
+READ_INTERVAL = 3  # 3 seconds per call to stay within free tier
+
 
 # Coordinates for data gathering
 COORDINATES = [
@@ -88,7 +92,7 @@ def main():
                     )
                     healthcheck(HEALTHCHECK_URL)
 
-                sleep(1.5)  # read interval
+                sleep(READ_INTERVAL)  # read interval
 
 
 def get_grid_coordinates(corners, grid=8):
