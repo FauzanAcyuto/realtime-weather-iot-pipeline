@@ -17,7 +17,7 @@ with open("creds/creds.json", "r") as file:
 
 # Api configuration
 BASEURL = "https://api.openweathermap.org/data/2.5/weather"
-READ_INTERVAL = 3  # 3 seconds per call to stay within free tier
+READ_INTERVAL = 2.8  # 2.8s seconds per call to stay within free tier
 
 
 # Coordinates for data gathering
