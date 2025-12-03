@@ -63,36 +63,39 @@ def main():
             logger.exception("MongoDB Connection Failure!")
 
         while True:
-            for lat, lon in weather_area:
-                data = get_current_weather(BASEURL, APIKEY, lat, lon)
-                if data == {}:
-                    logger.error(
-                        "Attempted to insert data of length 0 to mongoDB, skipping"
+            try:
+                for lat, lon in weather_area:
+                    data = get_current_weather(BASEURL, APIKEY, lat, lon)
+                    if data == {}:
+                        logger.error(
+                            "Attempted to insert data of length 0 to mongoDB, skipping"
+                        )
+                        continue
+                    else:
+                        data_length = len(data)
+                        logger.debug(
+                            f"Api request finished for data of length {data_length}"
+                        )
+
+                    insert_data_to_mongodb(
+                        client,
+                        database="weather-tracking-system",
+                        collection="open-weather-raw",
+                        data=data,
+                        max_retries=5,
                     )
-                    continue
-                else:
-                    data_length = len(data)
-                    logger.debug(
-                        f"Api request finished for data of length {data_length}"
-                    )
 
-                insert_data_to_mongodb(
-                    client,
-                    database="weather-tracking-system",
-                    collection="open-weather-raw",
-                    data=data,
-                    max_retries=5,
-                )
+                    processed_data += 1
 
-                processed_data += 1
+                    if processed_data % 25 == 0:
+                        logger.info(
+                            f"Processed {processed_data} data to mongodb, continuing..."
+                        )
+                        healthcheck(HEALTHCHECK_URL)
 
-                if processed_data % 25 == 0:
-                    logger.info(
-                        f"Processed {processed_data} data to mongodb, continuing..."
-                    )
-                    healthcheck(HEALTHCHECK_URL)
-
-                sleep(READ_INTERVAL)  # read interval
+                    sleep(READ_INTERVAL)  # read interval
+            except Exception:
+                logger.exception("Exception occurred in the main loop!")
 
 
 def get_grid_coordinates(corners, grid=8):
