@@ -65,7 +65,7 @@ def main():
         while True:
             try:
                 for lat, lon in weather_area:
-                    data = get_current_weather(BASEURL, APIKEY, lat, lon)
+                    data = get_current_weather(BASEURL, APIKEY, lat, lon, max_retries=5)
                     if data == {}:
                         logger.error(
                             "Attempted to insert data of length 0 to mongoDB, skipping"
@@ -143,12 +143,27 @@ def setup_logger(loglevel, log_file, logsize, files_to_keep):
     return logger
 
 
-def get_current_weather(url, appid, lat, lon, query_dict={}):
+def get_current_weather(url, appid, lat, lon, max_retries, query_dict={}):
     logger = logging.getLogger(__name__)
     logger.debug(f"Getting weather api data for {lat},{lon}")
     requiredparams = {"appid": APIKEY, "lat": lat, "lon": lon}
     getparams = {**requiredparams, **query_dict}
-    response = requests.get(BASEURL, params=getparams)
+
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.get(BASEURL, params=getparams, timeout=5)
+        except Exception:
+            if attempt == max_retries:
+                logger.error(
+                    "Max attempt on api request achieved, breaking and restarting the script"
+                )
+                break
+            retry_pause = 2**attempt
+            logger.warning(
+                f"API Connection Issues, currently on retry {attempt + 1}, pausing for {retry_pause} seconds before next try."
+            )
+            sleep(retry_pause)
+
     status_code = response.status_code
     resp_dict = json.loads(response.text)
 
@@ -179,7 +194,7 @@ def insert_data_to_mongodb(client, database, collection, data, max_retries):
         except errors.AutoReconnect:
             if attempt + 1 == max_retries:
                 logger.error("Max retries exceeded, mongodb reconnection has failed")
-                raise
+                break
             retry_pause = (attempt + 1) ** 2
             logger.warning(
                 f"Mongo Connection Issues, currently on retry {attempt + 1}, pausing for {retry_pause} seconds before next try."
