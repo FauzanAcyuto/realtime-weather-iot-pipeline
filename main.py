@@ -156,7 +156,7 @@ def get_current_weather(url, appid, lat, lon, max_retries, query_dict={}):
         except Exception:
             if attempt == max_retries:
                 logger.error(
-                    "Max attempt on api request achieved, breaking and restarting the script"
+                    f"API Timeout on {lat},{lon} skipping these coordinates and continuing with the nex"
                 )
                 return {}
             retry_pause = 2**attempt
