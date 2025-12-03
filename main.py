@@ -152,12 +152,13 @@ def get_current_weather(url, appid, lat, lon, max_retries, query_dict={}):
     for attempt in range(max_retries + 1):
         try:
             response = requests.get(BASEURL, params=getparams, timeout=5)
+            break
         except Exception:
             if attempt == max_retries:
                 logger.error(
                     "Max attempt on api request achieved, breaking and restarting the script"
                 )
-                break
+                return {}
             retry_pause = 2**attempt
             logger.warning(
                 f"API Connection Issues, currently on retry {attempt + 1}, pausing for {retry_pause} seconds before next try."
