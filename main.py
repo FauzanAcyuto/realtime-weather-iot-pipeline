@@ -208,8 +208,8 @@ def healthcheck(hcurl):
 
     try:
         requests.get(hcurl, timeout=10)
-    except requests.RequestException:
-        logger.exception("Health check ping failure")
+    except requests.RequestException as e:
+        logger.warning(f"Health check ping failure: {e}")
 
 
 if __name__ == "__main__":
