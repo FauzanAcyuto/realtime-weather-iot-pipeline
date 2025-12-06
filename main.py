@@ -153,7 +153,20 @@ def get_current_weather(url, appid, lat, lon, max_retries, query_dict={}):
     for attempt in range(max_retries + 1):
         try:
             response = requests.get(BASEURL, params=getparams, timeout=5)
-            break
+            status_code = response.status_cod
+            if status_code == 200:
+                logger.debug("Api call successful!")
+                resp_dict = json.loads(response.text)
+                return resp_dict
+            else:
+                errmsg = resp_dict["message"]
+                logger.error(
+                    f"API Error with with message :{errmsg} code {status_code}"
+                )
+                retry_pause = 2**attempt
+                sleep(retry_pause)
+                continue
+
         except Exception:
             if attempt == max_retries:
                 logger.error(
@@ -165,17 +178,6 @@ def get_current_weather(url, appid, lat, lon, max_retries, query_dict={}):
                 f"API Connection Issues, currently on retry {attempt + 1}, pausing for {retry_pause} seconds before next try."
             )
             sleep(retry_pause)
-
-    status_code = response.status_code
-    resp_dict = json.loads(response.text)
-
-    if status_code == 200:
-        logger.debug("Api call successful!")
-        return resp_dict
-    else:
-        errmsg = resp_dict["message"]
-        logger.error(f"API Error with with message :{errmsg} code {status_code}")
-        return {}
 
 
 def insert_data_to_mongodb(client, database, collection, data, max_retries):
