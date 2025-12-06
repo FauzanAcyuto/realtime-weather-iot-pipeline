@@ -153,7 +153,7 @@ def get_current_weather(url, appid, lat, lon, max_retries, query_dict={}):
     for attempt in range(max_retries + 1):
         try:
             response = requests.get(BASEURL, params=getparams, timeout=5)
-            status_code = response.status_cod
+            status_code = response.status_code
             if status_code == 200:
                 logger.debug("Api call successful!")
                 resp_dict = json.loads(response.text)
