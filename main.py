@@ -7,6 +7,7 @@ from time import sleep
 
 import numpy as np
 import requests
+from bson import ObjectId
 from pymongo import MongoClient, errors
 
 with open("creds/creds.json", "r") as file:
@@ -180,25 +181,30 @@ def get_current_weather(url, appid, lat, lon, max_retries, query_dict={}):
 def insert_data_to_mongodb(client, database, collection, data, max_retries):
     logger = logging.getLogger(__name__)
 
+    doc = data.copy()
     # Add processing metadata
-    data["processed_at"] = None
-    data["inserted_at"] = datetime.now(UTC)
+    doc["_id"] = ObjectId()  # prefilled _id to prevent duplicate insert
+    doc["processed_at"] = None
+    doc["inserted_at"] = datetime.now(UTC)
 
     db = client[database]
     coll = db[collection]
 
     for attempt in range(max_retries + 1):
         try:
-            result = coll.insert_one(data)
-            print(result.inserted_id)
+            result = coll.insert_one(doc)
+            logger.debug(f"Successfully inserted doc with id:{result.inserted_id}")
             return result
+        except errors.DuplicateKeyError:
+            logger.warning(f"Attempted to insert duplicate doc with id: {doc['_id']}")
+            return None
         except errors.AutoReconnect:
             if attempt + 1 == max_retries:
                 logger.error("Max retries exceeded, mongodb reconnection has failed")
                 break
-            retry_pause = (attempt + 1) ** 2
+            retry_pause = 2**attempt
             logger.warning(
-                f"Mongo Connection Issues, currently on retry {attempt + 1}, pausing for {retry_pause} seconds before next try."
+                f"Mongo Connection Issues, currently on retry {attempt + 1}/{max_retries}, pausing for {retry_pause}s"
             )
             sleep(retry_pause)
 
