@@ -161,7 +161,7 @@ def get_current_weather(url, appid, lat, lon, max_retries, query_dict={}):
                 )
                 return {}
             retry_pause = 2**attempt
-            logger.warning(
+            logger.exception(
                 f"API Connection Issues, currently on retry {attempt + 1}, pausing for {retry_pause} seconds before next try."
             )
             sleep(retry_pause)
